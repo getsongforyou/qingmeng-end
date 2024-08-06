@@ -2,17 +2,18 @@ const mysql = require('mysql')
 const express = require('express')
 const cors = require('cors')
 const app = express()
-const expressJwt = require('express-jwt')
-
-
-
-app.use(expressJwt({
-  secret:'8888'
-})).unless({
-  path: ['/login']
-})
+const jwt = require('jsonwebtoken')
+let { expressjwt} = require('express-jwt')
 
 app.use(cors({origin: '*'}))
+
+app.use(expressjwt({
+  secret: '8888',
+  algorithms: ['HS256'],
+}).unless({path: ['/login']}))
+
+app.use(express.json())
+app.use(express.urlencoded({extended:true}))
 
 
 const connection = mysql.createConnection({
@@ -20,44 +21,60 @@ const connection = mysql.createConnection({
   user: 'root',
   password: '12345600',
   database: 'qingmeng'
-})
+})    
 connection.connect()
-
-app.use(express.json())
-app.use(express.urlencoded({extended:true}))
 
 // login  put first  ************************
 app.post('/login',(req, res)=> {
     const {name, password}  = req.body
+    
+
     const sql = `select * from user where username = '${name}' and password = ${password};`
     connection.query(sql,(err, rows, fields)=>{
       if(err)throw err;
       console.log(rows)
       if(rows.length>0){
+        const token = 'Bearer ' + jwt.sign(
+          {
+            name
+          },
+          '8888',
+          {
+            expiresIn: 3600*24*7
+          }
+        )
         res.send({
           success: true,
           message: '成功登录',
-          token: '12345678'
-        })
+          token: token
+        })  
+        console.log(`${name}登录成功`)
       }else{
         res.send({
           success: false,
           message: '登录失败'
-        })
-      }
+        })  
+      }  
 
-    } )
-})
+    } )  
+})    
+
+
+
+app.use(express.json())
+app.use(express.urlencoded({extended:true}))
+
 
 
 
 app.get('/getinfo',(req, res)=>{
-
+res.send()
 })
 
 
 
 app.get('/getTable', (req, res)=>{
+  console.log('gettable')
   res.send({
     tableData: [{
       date: '2016-05-02',
@@ -116,6 +133,11 @@ app.get('/getTree', (req, res) => {
       }]
     }]})
 })
+
+app.use((err, req, res, next)=>{
+  res.send({err})
+})
+
 
 app.listen(3000,()=>{
   console.log('run on http://127.0.0.1:3000')
