@@ -71,6 +71,52 @@ app.post('/login', (req, res) => {
   
 })
 
+
+app.get('/getArticleList', (req, res)=>{
+  console.log('/getarticleList')
+  connection.query(`select id, title, author, summary, date from article`, (error, rows)=>{
+    if(error) throw error;
+    if(rows.length>0){
+      res.send({
+        success: true,
+        message: 'getarticlelist success',
+        tableData:rows
+      })
+    }else{
+      res.send({
+        success: true,
+        message: '暂无文章',
+        tableData:rows
+      })
+    }
+  })
+})
+
+app.post('/postArticle', (req, res)=>{
+  console.log('/postArticle')
+  console.log(req.body)
+  const {title, author, summary, date, text} = req.body.form
+  connection.query(`INSERT INTO article VALUES(null,'${title}','${author}','${summary}','${date}','${text}');`,(error,result)=>{
+    if(error){
+      // console.log('error', error)
+      res.send({
+        success: false,
+        message: 'failed'
+      })
+      throw error
+    }else{
+
+      res.send({
+        success: true,
+        message: 'publishing successful'
+      })
+      console.log('result:',result)
+    }
+  })
+
+})
+
+
 app.get('/getInfo', (req, res) => {
   console.log('/getinfo')
   console.log(req.auth)
@@ -153,6 +199,10 @@ app.get('/getTree', (req, res) => {
       }]
     }]
   })
+})
+
+app.post('/logout', (req, res)=>{
+  res.send({code: '200'})
 })
 
 app.use((err, req, res, next) => {
